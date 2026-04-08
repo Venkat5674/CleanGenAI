@@ -1,6 +1,8 @@
 pandas 
 pydantic 
 openai 
+groq
+streamlit
 python-dotenv 
 fastapi 
 uvicorn
