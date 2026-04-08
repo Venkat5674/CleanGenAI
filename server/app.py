@@ -1,8 +1,13 @@
 from fastapi import FastAPI, Request
 from env.environment import DataCleaningEnv
 from env.actions import Action
+import uvicorn
 
 app = FastAPI(title="AI Data Cleaner API for OpenEnv Grader")
+
+def start():
+    uvicorn.run("server.app:app", host="0.0.0.0", port=7860)
+
 current_env = None
 
 @app.post("/reset")
