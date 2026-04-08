@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cleangen-ai"
+version = "0.1.0"
+description = "CleanGen AI Data Cleaning Environment"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas",
+    "openpyxl",
+    "xlsxwriter",
+    "pydantic",
+    "openai",
+    "groq",
+    "streamlit",
+    "python-dotenv",
+    "fastapi",
+    "uvicorn",
+    "gunicorn",
+    "numpy",
+    "tqdm",
+    "rich",
+    "openenv"
+]
