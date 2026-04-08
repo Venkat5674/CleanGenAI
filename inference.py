@@ -2,7 +2,7 @@ import asyncio
 import re
 from env.environment import DataCleaningEnv
 from env.actions import Action
-from groq import AsyncGroq
+from openai import AsyncOpenAI
 from dotenv import load_dotenv
 import json
 import os
@@ -12,10 +12,12 @@ load_dotenv()
 async def get_action_from_llm(obs):
     try:
         # Initialize client inside the function to avoid crashing on import when the API key is missing
-        api_key = os.environ.get("GROQ_API_KEY", "dummy_key_to_prevent_crash_during_validation")
-        client = AsyncGroq(api_key=api_key)
+        api_key = os.environ.get("API_KEY", os.environ.get("GROQ_API_KEY", "dummy_key_to_prevent_crash_during_validation"))
+        base_url = os.environ.get("API_BASE_URL", "https://api.groq.com/openai/v1") # Fallback to Groq's OpenAI-compatible endpoint
+        
+        client = AsyncOpenAI(api_key=api_key, base_url=base_url)
     except Exception as e:
-        print(f"Failed to initialize Groq client: {e}")
+        print(f"Failed to initialize OpenAI client: {e}")
         return Action(action_type="stop_cleaning")
         
     prompt = f"""
