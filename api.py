@@ -16,7 +16,19 @@ async def reset_env(request: Request):
         
     current_env = DataCleaningEnv(task=task)
     obs = await current_env.reset()
-    return obs.dict()
+    
+    # Clean NaNs out of the preview for JSON compliance
+    return _clean_nan(obs.dict())
+
+def _clean_nan(obj):
+    import math
+    if isinstance(obj, dict):
+        return {k: _clean_nan(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_clean_nan(v) for v in obj]
+    elif isinstance(obj, float) and math.isnan(obj):
+        return None
+    return obj
 
 @app.post("/step")
 async def step_env(request: Request):
@@ -34,8 +46,9 @@ async def step_env(request: Request):
         
     obs, reward, done, info = await current_env.step(action)
     
+    # We must substitute NaNs so JSON encoding doesn't break.
     return {
-        "observation": obs.dict(),
+        "observation": _clean_nan(obs.dict()),
         "reward": reward,
         "done": done,
         "info": info
