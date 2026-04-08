@@ -7,4 +7,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "inference.py"]
+# Expose port 7860 to match Hugging Face's requirements
+EXPOSE 7860
+
+# Run the FastAPI server natively required for OpenEnv grading
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "7860"]
