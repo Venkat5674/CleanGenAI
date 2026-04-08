@@ -7,15 +7,12 @@ models:
   - gpt-4-turbo
 
 tasks:
-  - easy
-  - medium
-  - hardname: data-cleaning-env
-description: AI agent for cleaning tabular data
-
-tasks:
-  - easy
-  - medium
-  - hard
+  easy:
+    grader: env.grader:grade
+  medium:
+    grader: env.grader:grade
+  hard:
+    grader: env.grader:grade
 
 actions:
   - remove_duplicates
