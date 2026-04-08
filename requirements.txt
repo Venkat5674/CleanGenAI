@@ -1,0 +1,11 @@
+pandas 
+pydantic 
+openai 
+python-dotenv 
+fastapi 
+uvicorn
+gunicorn
+numpy
+tqdm
+rich
+openenv
