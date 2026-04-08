@@ -8,10 +8,16 @@ import json
 import os
 
 load_dotenv()
-client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
-
 
 async def get_action_from_llm(obs):
+    try:
+        # Initialize client inside the function to avoid crashing on import when the API key is missing
+        api_key = os.environ.get("GROQ_API_KEY", "dummy_key_to_prevent_crash_during_validation")
+        client = AsyncGroq(api_key=api_key)
+    except Exception as e:
+        print(f"Failed to initialize Groq client: {e}")
+        return Action(action_type="stop_cleaning")
+        
     prompt = f"""
 You are a data cleaning agent.
 
@@ -33,25 +39,25 @@ Example:
 {{"action_type": "convert_date", "column": "date"}}
 """
 
-    response = await client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0,
-    )
-
-    text = response.choices[0].message.content
-    
-    # Try to extract JSON using regex in case LLM is chatty
-    json_match = re.search(r'\{.*\}', text, re.DOTALL)
-    if json_match:
-        text = json_match.group(0)
-
     try:
+        response = await client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+        )
+
+        text = response.choices[0].message.content
+        
+        # Try to extract JSON using regex in case LLM is chatty
+        json_match = re.search(r'\{.*\}', text, re.DOTALL)
+        if json_match:
+            text = json_match.group(0)
+
         action_dict = json.loads(text)
         return Action(**action_dict)
     except Exception as e:
-        print(f"Error parsing LLM output: {e}\nRaw output: {text}")
-        return Action(action_type="remove_duplicates")
+        print(f"Error during LLM network call or parsing: {e}")
+        return Action(action_type="stop_cleaning")
 
 
 async def run(task: str = "easy"):
