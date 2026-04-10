@@ -12,15 +12,12 @@ load_dotenv()
 async def get_action_from_llm(obs):
     try:
         # Initialize client inside the function to avoid crashing on import when the API key is missing
-        api_key = os.environ.get("API_KEY", os.environ.get("GROQ_API_KEY", "dummy_key_to_prevent_crash_during_validation"))
+        api_key = os.environ.get("HF_TOKEN", os.environ.get("API_KEY", os.environ.get("GROQ_API_KEY", "dummy_key_to_prevent_crash_during_validation")))
         base_url = os.environ.get("API_BASE_URL", "https://api.groq.com/openai/v1") # Fallback to Groq's OpenAI-compatible endpoint
+        model_name = os.environ.get("MODEL_NAME", "llama-3.1-8b-instant")
         
-        client = AsyncOpenAI(api_key=api_key, base_url=base_url)
-    except Exception as e:
-        print(f"Failed to initialize OpenAI client: {e}")
-        return Action(action_type="stop_cleaning")
-        
-    prompt = f"""
+        async with AsyncOpenAI(api_key=api_key, base_url=base_url) as client:
+            prompt = f"""
 You are a data cleaning agent.
 
 Observation:
@@ -41,12 +38,11 @@ Example:
 {{"action_type": "convert_date", "column": "date"}}
 """
 
-    try:
-        response = await client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0,
-        )
+            response = await client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0,
+            )
 
         text = response.choices[0].message.content
         
@@ -58,7 +54,7 @@ Example:
         action_dict = json.loads(text)
         return Action(**action_dict)
     except Exception as e:
-        print(f"Error during LLM network call or parsing: {e}")
+        # We must not raise to avoid breaking the script execution
         return Action(action_type="stop_cleaning")
 
 
@@ -67,17 +63,34 @@ async def run(task: str = "easy"):
     obs = await env.reset()
 
     done = False
-    print("[START]")
+    model_name = os.environ.get("MODEL_NAME", "llama-3.1-8b-instant")
+    print(f"[START] task={task} env=data-cleaning-env model={model_name}", flush=True)
 
+    step = 0
+    rewards = []
+    
     while not done:
+        step += 1
         action = await get_action_from_llm(obs)
-        print(f"[ACTION] {action}")
 
         obs, reward, done, info = await env.step(action)
-        print(f"[REWARD] {reward}")
+        
+        rewards.append(reward)
+        error_val = info.get('error', None) if info else None
+        
+        action_str = f"{action.action_type}"
+        if action.column: action_str += f"('{action.column}')"
+        if action.value: action_str += f"='{action.value}'"
+            
+        print(f"[STEP] step={step} action={action_str} reward={reward:.2f} done={str(done).lower()} error={error_val if error_val else 'null'}", flush=True)
 
-    print(f"[END] Final Reward: {reward}")
+    score = reward
+    score = min(max(score, 0.0), 1.0)
+    success = score >= 0.5
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    print(f"[END] success={str(success).lower()} steps={step} score={score:.2f} rewards={rewards_str}", flush=True)
 
 
 if __name__ == "__main__":
-    asyncio.run(run("easy"))
+    for task in ["easy", "medium", "hard"]:
+        asyncio.run(run(task))
