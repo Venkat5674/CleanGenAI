@@ -81,25 +81,10 @@ class DataCleaningEnv:
 
     def _compute_reward(self) -> float:
         if self.df is None or self.df.empty:
-            return 0.0
+            return 0.001
         total_cells = max(1, len(self.df) * len(self.df.columns))
         missing_score = 1 - (self.df.isnull().sum().sum() / total_cells)
         duplicate_score = 1 - (self.df.duplicated().sum() / max(1, len(self.df)))
-        return float(max(0.0, min(1.0, 0.5 * missing_score + 0.5 * duplicate_score)))
+        return float(max(0.001, min(0.999, 0.5 * missing_score + 0.5 * duplicate_score)))
 
-    def _get_obs(self):
-        return Observation(
-            table_preview=self.df.head().to_dict(orient="records"),
-            num_missing=int(self.df.isnull().sum().sum()),
-            num_duplicates=int(self.df.duplicated().sum()),
-            data_schema={col: str(dtype) for col, dtype in self.df.dtypes.items()},
-            steps_taken=self.steps,
-        )
 
-    def _compute_reward(self):
-        total_cells = len(self.df) * len(self.df.columns)
-
-        missing_score = 1 - (self.df.isnull().sum().sum() / total_cells)
-        duplicate_score = 1 - (self.df.duplicated().sum() / len(self.df))
-
-        return 0.5 * missing_score + 0.5 * duplicate_score

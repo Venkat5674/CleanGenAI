@@ -38,10 +38,8 @@ async def evaluate():
             score = grade(output_df, expected_df)
             print(f"✅ Score for {task.upper()}: {score:.2%} ({score})")
             
-        except Exception as e:            print(f"Failed to evaluate {task.upper()}: {e}")
-
-if __name__ == "__main__":
-    asyncio.run(evaluate())            print(f"❌ Error evaluating {task.upper()}: {e}")
+        except Exception as e:
+            print(f"❌ Error evaluating {task.upper()}: {e}")
             
         print("\n")
 
